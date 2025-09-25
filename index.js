@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const authRoute = require("./routes/auth");
+
 const PORT = process.env.PORT || 5000;
 dotenv.config();
 
@@ -28,5 +30,8 @@ connectDB();
 app.get("/", (req, res) => {
   res.send("Connectify API is running..");
 });
+
+//routes
+app.use("/api/auth", authRoute);
 
 app.listen(PORT, () => console.log(`Server Started on port ${PORT}`));
