@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const authRoute = require("./routes/auth");
 const postRoute = require("./routes/posts");
+const userRoute = require("./routes/users");
 
 const PORT = process.env.PORT || 5000;
 dotenv.config();
@@ -35,5 +36,6 @@ app.get("/", (req, res) => {
 //routes
 app.use("/api/auth", authRoute);
 app.use("/api/posts", postRoute);
+app.use("/api/users", userRoute);
 
 app.listen(PORT, () => console.log(`Server Started on port ${PORT}`));
