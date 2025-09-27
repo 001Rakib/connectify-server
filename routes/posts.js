@@ -1,4 +1,5 @@
 const auth = require("../middleware/auth");
+const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const User = require("../models/User");
 
@@ -76,4 +77,16 @@ router.get("/profile/:username", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+router.get("/:postId/comments", async (req, res) => {
+  try {
+    const comments = await Comment.find({ post: req.params.postId })
+      .populate("user", "username profilePicture")
+      .sort({ createdAt: -1 });
+    res.status(200).json(comments);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
 module.exports = router;
