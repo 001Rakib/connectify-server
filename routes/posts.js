@@ -2,14 +2,16 @@ const auth = require("../middleware/auth");
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const User = require("../models/User");
+const upload = require("../config/cloudinary");
 
 const router = require("express").Router();
 
 // --- CREATE A POST ---
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, upload.single("image"), async (req, res) => {
   const newPost = {
     user: req.user.id,
     description: req.body.description,
+    imageUrl: req.file ? req.file.path : "",
   };
   try {
     const savedPost = await Post.create(newPost);
@@ -20,6 +22,7 @@ router.post("/", auth, async (req, res) => {
     );
     res.status(201).json(post);
   } catch (error) {
+    console.log(error);
     res.status(500).json(err);
   }
 });

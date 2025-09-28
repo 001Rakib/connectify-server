@@ -12,7 +12,10 @@ const PostSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    //will add images, likes, and comments later
+    imageUrl: {
+      type: String,
+      default: "",
+    },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
