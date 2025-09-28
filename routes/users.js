@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+const upload = require("../config/cloudinary");
 
 // --- GET A USER BY USERNAME ---
 router.get("/:username", async (req, res) => {
@@ -48,5 +49,41 @@ router.put("/:id/follow", auth, async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+// --- UPDATE USER PROFILE ---
+router.put(
+  "/profile",
+  auth,
+  upload.single("profilePicture"),
+  async (req, res) => {
+    try {
+      // Find the user to update
+      const userToUpdate = await User.findById(req.user.id);
+      if (!userToUpdate) {
+        return res.status(404).json("User not found");
+      }
+
+      // Update bio if provided
+      if (req.body.bio) {
+        userToUpdate.bio = req.body.bio;
+      }
+
+      // Update profile picture if a new one is uploaded
+      if (req.file) {
+        userToUpdate.profilePicture = req.file.path;
+      }
+
+      // Save the updated user and send back the new data
+      const updatedUser = await userToUpdate.save();
+
+      // Don't send the password back
+      const { password, ...others } = updatedUser._doc;
+      res.status(200).json(others);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json(err);
+    }
+  }
+);
 
 module.exports = router;

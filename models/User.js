@@ -13,6 +13,11 @@ const userSchema = new Schema(
       unique: true,
       trim: true,
     },
+    bio: {
+      type: String,
+      max: 150,
+      default: "",
+    },
     email: {
       type: String,
       required: true,
