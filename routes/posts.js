@@ -92,4 +92,31 @@ router.get("/:postId/comments", async (req, res) => {
   }
 });
 
+// --- DELETE A POST ---
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json("Post not found");
+    }
+
+    // --- Authorization Check ---
+    // Check if the user trying to delete the post is the user who created it
+    if (post.user.toString() !== req.user.id) {
+      return res.status(403).json("You can only delete your own posts");
+    }
+
+    // Delete the post
+    await post.deleteOne();
+
+    // Also delete all comments associated with the post
+    await Comment.deleteMany({ post: req.params.id });
+
+    res.status(200).json("The post and its comments have been deleted");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(err);
+  }
+});
+
 module.exports = router;
