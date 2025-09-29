@@ -31,7 +31,7 @@ router.post("/", auth, upload.single("image"), async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const posts = await Post.find()
-      .populate("user", "username profilePicture")
+      .populate("user", "username name profilePicture")
       .sort({ createdAt: -1 });
     res.status(200).json(posts);
   } catch (err) {
@@ -88,6 +88,35 @@ router.get("/:postId/comments", async (req, res) => {
       .sort({ createdAt: -1 });
     res.status(200).json(comments);
   } catch (err) {
+    res.status(500).json(err);
+  }
+});
+//Update post
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json("Post not found");
+    }
+
+    // --- Authorization Check ---
+    // Ensure the user trying to update is the post's author
+    if (post.user.toString() !== req.user.id) {
+      return res.status(403).json("You can only update your own posts");
+    }
+
+    // Update the description
+    post.description = req.body.description;
+    const updatedPost = await post.save();
+
+    // Populate user info before sending back
+    const populatedPost = await Post.findById(updatedPost._id).populate(
+      "user",
+      "username name profilePicture"
+    );
+    res.status(200).json(populatedPost);
+  } catch (err) {
+    console.error(err);
     res.status(500).json(err);
   }
 });
