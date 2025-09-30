@@ -2,6 +2,7 @@ const auth = require("../middleware/auth");
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const upload = require("../config/cloudinary");
 
 const router = require("express").Router();
@@ -50,12 +51,25 @@ router.put("/:id/like", auth, async (req, res) => {
     if (post.likes.includes(req.user.id)) {
       // If yes, unlike it
       await post.updateOne({ $pull: { likes: req.user.id } });
+
       res
         .status(200)
         .json({ message: "The post has been unliked", liked: false });
     } else {
       // If no, like it
       await post.updateOne({ $push: { likes: req.user.id } });
+      // --- CREATE NOTIFICATION ---
+      // Don't notify if you like your own post
+
+      if (post.user.toString() !== req.user.id) {
+        const newNotification = new Notification({
+          sender: req.user.id,
+          receiver: post.user,
+          type: "like",
+          post: post._id,
+        });
+        await newNotification.save();
+      }
       res.status(200).json({ message: "The post has been liked", liked: true });
     }
   } catch (err) {
