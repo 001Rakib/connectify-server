@@ -48,7 +48,22 @@ router.post("/login", async (req, res) => {
 
     //create and assign a jwt token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
+      expiresIn: "15m",
+    });
+
+    // --- Create Refresh Token ---
+    const refreshToken = jwt.sign(
+      { id: user._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Store refresh token in a secure, httpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     const { password, ...others } = user._doc;
@@ -56,5 +71,27 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     res.status(500).json(err);
   }
+});
+
+// --- REFRESH ACCESS TOKEN ---
+router.post("/refresh", (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) return res.status(401).json("You are not authenticated!");
+
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    if (err) return res.status(403).json("Refresh token is not valid!");
+
+    const newAccessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
+
+    res.status(200).json({ accessToken: newAccessToken });
+  });
+});
+
+// --- LOGOUT ---
+router.post("/logout", (req, res) => {
+  res.clearCookie("refreshToken");
+  res.status(200).json("User has been logged out.");
 });
 module.exports = router;

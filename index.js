@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const http = require("http");
+const cookieParser = require("cookie-parser");
 const { Server } = require("socket.io");
 dotenv.config();
 
@@ -26,6 +27,7 @@ const io = new Server(server, {
 //middleware
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 //---Database Connection--
 const connectDB = async () => {
@@ -42,8 +44,6 @@ connectDB();
 
 // --- Socket.IO Connection Logic ---
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
-
   // 1. Take userId and socketId from user
   socket.on("addUser", (userId) => {
     if (userId) {
@@ -56,15 +56,11 @@ io.on("connection", (socket) => {
 
   // 2. Send a notification
   socket.on("sendNotification", ({ senderId, receiverId, type, post }) => {
-    console.log(`SERVER: Received notification for receiver: ${receiverId}`);
-    // --- CHANGE 2: EMIT TO THE ROOM ---
-    // Instead of finding a socketId, we emit directly to the receiver's room.
     io.to(receiverId).emit("getNotification", {
       senderId,
       type,
       post,
     });
-    console.log(`SERVER: Emitted notification to room: ${receiverId}`);
   });
 
   // 3. Handle disconnection
