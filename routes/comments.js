@@ -32,7 +32,7 @@ router.post("/", auth, async (req, res) => {
     // Populate user info before sending back
     const comment = await Comment.findById(savedComment._id).populate(
       "user",
-      "username profilePicture"
+      "username name profilePicture"
     );
     res.status(201).json(comment);
   } catch (err) {
