@@ -2,6 +2,7 @@ const router = require("express").Router();
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const upload = require("../config/cloudinary");
+const bcrypt = require("bcryptjs");
 
 // --- GET A USER BY USERNAME ---
 router.get("/:username", async (req, res) => {
@@ -85,5 +86,37 @@ router.put(
     }
   }
 );
+
+// --- CHANGE USER PASSWORD ---
+router.put("/password", auth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    // 1. Find the user but DO NOT exclude the password field
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json("User not found");
+    }
+
+    // 2. Verify their current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json("Incorrect current password.");
+    }
+
+    // 3. Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 4. Update and save the user
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json("Password updated successfully.");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json("Server error.");
+  }
+});
 
 module.exports = router;
